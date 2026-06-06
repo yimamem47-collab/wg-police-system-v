@@ -175,31 +175,8 @@ async function startServer() {
         })
       }).catch(e => console.error("Sheets submit failed:", e));
 
-      // 4. GitHub Backup Upload
-      const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.VITE_GITHUB_TOKEN;
-      if (GITHUB_TOKEN) {
-        const FILE_PATH = `reports/tip-${Date.now()}.json`;
-        const contentObj = {
-          ...args,
-          timestamp: new Date().toISOString(),
-          source: 'AI Assistant Digital Portal'
-        };
-        const base64Content = Buffer.from(JSON.stringify(contentObj, null, 2)).toString("base64");
-        const putUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
-        await fetch(putUrl, {
-          method: "PUT",
-          headers: {
-            "Authorization": `token ${GITHUB_TOKEN}`,
-            "Content-Type": "application/json",
-            "Accept": "application/vnd.github.v3+json",
-            "User-Agent": "West-Gojjam-Police-Sync"
-          },
-          body: JSON.stringify({
-            message: `New crime tip from AI Assistant: ${args.name}`,
-            content: base64Content
-          })
-        }).catch(e => console.error("GitHub upload failed:", e));
-      }
+      // 4. Secure Database Preservation
+      // (GitHub file commit backup is deactivated to protect citizen confidentiality and prevent deployment git push conflicts)
     } catch (err) {
       console.error("Server submitCrimeTip function error:", err);
     }
