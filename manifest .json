@@ -1,38 +1,26 @@
-{
-  "name": "West Gojjam Police 2018",
-  "short_name": "WG Police",
-  "description": "Official Management System for West Gojjam Zone Police",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#002B5B",
-  "lang": "en",
-  "scope": "/",
-  "orientation": "portrait",
-  "icons": [
+"icons": [
     {
-      "src": "/police-logo.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/2968/2968832.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/police-logo.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/2968/2968832.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/police-logo.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/2968/2968832.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/police-logo.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/2968/2968832.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
   ]
-}
