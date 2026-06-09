@@ -1,0 +1,49 @@
+{
+  "name": "West Gojjam Zone Police Management System",
+  "short_name": "WG Police",
+  "description": "Official Management System for West Gojjam Zone Police Department (Ethiopia). Developed by Chief Sergeant Mengesha Yimam Abera.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#002B5B",
+  "theme_color": "#002B5B",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/police-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/police-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/police-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/police-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Report Tip",
+      "url": "/?shortcut=report",
+      "icons": [{ "src": "/police-logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "AI Assistant",
+      "url": "/?shortcut=assistant",
+      "icons": [{ "src": "/police-logo.png", "sizes": "192x192" }]
+    }
+  ]
+}
