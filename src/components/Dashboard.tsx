@@ -42,6 +42,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Incident, Officer, Assignment, Report, ZoneReport, User } from '../types';
 import { Language, translations } from '../lib/translations';
 import { openUrl, dialPhone } from '../lib/utils';
+import { getApiUrl } from '../services/apiConfig';
 import { CrimeMap } from './CrimeMap';
 
 interface StatCardProps {
@@ -135,7 +136,7 @@ export function Dashboard({
     setShowGithubDetails(true);
     
     try {
-      const response = await fetch('/api/github/sync', {
+      const response = await fetch(getApiUrl('/api/github/sync'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });

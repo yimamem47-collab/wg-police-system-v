@@ -44,6 +44,7 @@ import {
 } from 'recharts';
 import { Geolocation } from '@capacitor/geolocation';
 import { Camera as CapCamera, CameraResultType } from '@capacitor/camera';
+import { SafeImage } from './SafeImage';
 
 interface TrafficSafetyProps {
   incidents: Incident[];
@@ -475,7 +476,7 @@ export function TrafficSafety({ incidents, officers, lang, initialEditId, onAdd,
                 </button>
                 {newIncident.photos?.map((photo, i) => (
                   <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border border-brand-border">
-                    <img src={photo} className="w-full h-full object-cover" alt="" />
+                    <SafeImage src={photo} className="w-full h-full object-cover" alt="" lang={lang} />
                     <button 
                       type="button"
                       onClick={() => setNewIncident({...newIncident, photos: newIncident.photos?.filter((_, idx) => idx !== i)})}

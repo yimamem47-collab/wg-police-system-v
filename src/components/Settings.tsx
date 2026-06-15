@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Mail, Shield, Bell, Palette, Send, CheckCircle2, XCircle, Loader2, Activity, RefreshCw, Copy, ExternalLink, Info } from 'lucide-react';
+import { User, Mail, Shield, Bell, Palette, Send, CheckCircle2, XCircle, Loader2, Activity, RefreshCw, Copy, ExternalLink, Info, Globe } from 'lucide-react';
 import { User as UserType } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language, translations } from '../lib/translations';
@@ -7,6 +7,7 @@ import { onFirestoreStatusChange, clearFirestoreCache } from '../firebase';
 import { testFirebaseConnection, testTelegramConnection, testGoogleSheetsConnection, DiagnosticResult } from '../services/diagnostics';
 import { APP_VERSION } from '../constants';
 import { pushFileToGitHub, SyncResult } from '../services/githubFileService';
+import { getApiUrl, getApiServerUrl, setApiServerUrl } from '../services/apiConfig';
 interface SettingsProps {
   user: UserType | null;
   lang: Language;
@@ -36,6 +37,16 @@ export function Settings({ user, lang, onUpdate }: SettingsProps) {
   const [githubSyncResults, setGithubSyncResults] = useState<SyncResult[]>([]);
   const [showGithubDetails, setShowGithubDetails] = useState(false);
 
+  // API Server Configuration for Native App
+  const [apiServerUrlInput, setApiServerUrlInput] = useState(getApiServerUrl());
+  const [isUrlSaved, setIsUrlSaved] = useState(false);
+
+  const saveApiServerUrl = () => {
+    setApiServerUrl(apiServerUrlInput);
+    setIsUrlSaved(true);
+    setTimeout(() => setIsUrlSaved(false), 3000);
+  };
+
   React.useEffect(() => {
     const unsubscribe = onFirestoreStatusChange((connected) => {
       setIsFirestoreConnected(connected);
@@ -51,7 +62,7 @@ export function Settings({ user, lang, onUpdate }: SettingsProps) {
     setShowGithubDetails(true);
     
     try {
-      const response = await fetch('/api/github/sync', {
+      const response = await fetch(getApiUrl('/api/github/sync'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -440,6 +451,55 @@ export function Settings({ user, lang, onUpdate }: SettingsProps) {
                   </button>
                 </div>
               )}
+
+              {/* Native App API Server Gateway Configuration */}
+              <div className="pt-4 border-t border-brand-border/10">
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-text-secondary/80 mb-2 flex items-center gap-1.5">
+                  <Globe size={13} className="text-brand-accent animate-pulse" />
+                  {lang === 'am' ? 'የሞባይል ሰርቨር አድራሻ (API URL Gateway)' : 'Native App API Gateway'}
+                </p>
+                <p className="text-[10px] text-brand-text-secondary mb-4 leading-relaxed">
+                  {lang === 'am' 
+                    ? 'አፕሊኬሽኑ በስልክዎ ላይ ሆኖ ቴሌግራምን፣ ጀመናይ ኤአይን እና ሌሎችንም የሰርቨር ተግባራት እንዲጠቀም የዌብሳይትዎን አድራሻ ያስገቡ።'
+                    : 'Configure the active backend server URL to route API calls (Telegram, Gemini streams, logs) when using native mobile devices.'}
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={apiServerUrlInput}
+                    onChange={(e) => setApiServerUrlInput(e.target.value)}
+                    placeholder="https://your-server-domain.com"
+                    className="flex-1 input-field py-2.5 px-4 text-xs font-mono bg-black/40 border border-brand-border/50 rounded-xl text-white placeholder-brand-text-secondary/40 focus:border-brand-accent/50 focus:outline-none"
+                  />
+                  <button
+                    onClick={saveApiServerUrl}
+                    className="btn-primary text-xs py-2 px-4 shadow-lg flex items-center gap-1.5 transition-all active:scale-95 whitespace-nowrap"
+                  >
+                    {isUrlSaved ? (
+                      <>
+                        <CheckCircle2 size={13} className="text-emerald-400" />
+                        {lang === 'am' ? 'ተቀምጧል' : 'SAVED'}
+                      </>
+                    ) : (
+                      lang === 'am' ? 'አስቀምጥ' : 'SAVE URL'
+                    )}
+                  </button>
+                </div>
+                <div className="flex justify-between mt-2">
+                  <button 
+                    onClick={() => {
+                      setApiServerUrlInput('https://ais-pre-dv2qu5li6lwo7dput2a5di-281496265411.europe-west2.run.app');
+                      setApiServerUrl('https://ais-pre-dv2qu5li6lwo7dput2a5di-281496265411.europe-west2.run.app');
+                    }}
+                    className="text-[9px] font-semibold text-brand-text-secondary hover:text-white underline transition-colors"
+                  >
+                    Reset to Production Host
+                  </button>
+                  <span className="text-[9px] font-mono text-brand-text-secondary/40">
+                    Active: {getApiServerUrl()}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

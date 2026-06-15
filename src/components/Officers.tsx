@@ -4,6 +4,7 @@ import { Officer } from '../types';
 import { motion } from 'motion/react';
 import { Language, translations } from '../lib/translations';
 import { dialPhone } from '../lib/utils';
+import { SafeImage } from './SafeImage';
 
 interface OfficersProps {
   officers: Officer[];
@@ -129,7 +130,7 @@ export function Officers({ officers, lang, onAdd, onUpdate, onDelete }: Officers
               <div className="relative">
                 <div className="w-16 h-16 rounded-2xl bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-center overflow-hidden">
                   {officer.photo ? (
-                    <img src={officer.photo} alt={officer.name} className="w-full h-full object-cover" />
+                    <SafeImage src={officer.photo} alt={officer.name} className="w-full h-full object-cover" lang={lang} />
                   ) : (
                     <Shield size={32} className="text-brand-accent" />
                   )}

@@ -1,9 +1,11 @@
+import { getApiUrl } from './apiConfig';
+
 /**
  * Sends a message via the server-side proxy to bypass browser restrictions
  * and keep the bot token secure.
  */
 export async function sendTelegramMessage(message: string, retries = 2) {
-  const url = '/api/telegram';
+  const url = getApiUrl('/api/telegram');
   
   for (let i = 0; i <= retries; i++) {
     try {

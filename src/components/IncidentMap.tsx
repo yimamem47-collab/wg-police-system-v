@@ -5,6 +5,7 @@ import L from 'leaflet';
 import { Incident, IncidentStatus } from '../types';
 import { translations, Language } from '../lib/translations';
 import { AlertTriangle, Car, Filter, MapPin, FileText } from 'lucide-react';
+import { SafeImage } from './SafeImage';
 
 // Fix for Leaflet default icon issues in React
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -145,7 +146,7 @@ export function IncidentMap({ incidents, lang }: IncidentMapProps) {
                       <div className="mt-2 grid grid-cols-3 gap-1">
                         {incident.photos?.map((photo, idx) => (
                           <div key={idx} className="aspect-square rounded border border-brand-border overflow-hidden">
-                            <img src={photo} alt="" className="w-full h-full object-cover cursor-pointer" onClick={() => window.open(photo, '_blank')} />
+                            <SafeImage src={photo} alt="" className="w-full h-full object-cover cursor-pointer" lang={lang} />
                           </div>
                         ))}
                       </div>

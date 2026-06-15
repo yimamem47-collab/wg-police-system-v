@@ -227,6 +227,7 @@ export function CorruptionReport({ lang, onClose }: CorruptionReportProps) {
                   </div>
                 )}
                 <button 
+                  type="submit"
                   disabled={status === 'submitting'}
                   className="btn-primary w-full py-4 text-brand-bg font-bold text-lg flex items-center justify-center gap-2 shadow-xl shadow-brand-accent/20"
                 >

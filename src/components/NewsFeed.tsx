@@ -3,6 +3,7 @@ import { Newspaper, Plus, Search, Trash2, Edit2, Calendar, User, Eye, Sparkles, 
 import { NewsItem } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../lib/translations';
+import { SafeImage } from './SafeImage';
 
 interface NewsFeedProps {
   newsItems: NewsItem[];
@@ -237,11 +238,11 @@ export function NewsFeed({ newsItems, lang, userRole = 'Officer', onAdd, onUpdat
                 {/* Visual Header Banner */}
                 {news.photo ? (
                   <div className="relative h-48 w-full bg-slate-900 overflow-hidden border-b border-brand-border">
-                    <img 
+                    <SafeImage 
                       src={news.photo} 
                       alt={news.title} 
                       className="w-full h-full object-cover" 
-                      referrerPolicy="no-referrer"
+                      lang={lang}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-brand-card/90 via-black/40 to-transparent" />
                   </div>
@@ -417,7 +418,7 @@ export function NewsFeed({ newsItems, lang, userRole = 'Officer', onAdd, onUpdat
                   
                   {newNews.photo && (
                     <div className="aspect-video w-full rounded-xl overflow-hidden max-h-64">
-                      <img src={newNews.photo} alt="preview" className="w-full h-full object-cover" />
+                      <SafeImage src={newNews.photo} alt="preview" className="w-full h-full object-cover" lang={lang} />
                     </div>
                   )}
 

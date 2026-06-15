@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Language, translations } from '../lib/translations';
 import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { Capacitor } from '@capacitor/core';
+import { SafeImage } from './SafeImage';
 
 interface ReportsProps {
   reports: Report[];
@@ -681,7 +682,7 @@ export function Reports({ reports, officers, lang, initialEditId, onAdd, onUpdat
               <div className="grid grid-cols-4 gap-4">
                 {(newReport.photos || []).map((photo, index) => (
                   <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-brand-border group">
-                    <img src={photo} alt="Report" className="w-full h-full object-cover" />
+                    <SafeImage src={photo} alt="Report" className="w-full h-full object-cover" lang={lang} />
                     <button 
                       type="button"
                       onClick={() => removePhoto(index)}

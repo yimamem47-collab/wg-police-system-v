@@ -1,5 +1,6 @@
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import { getApiUrl } from './apiConfig';
 
 /**
  * Client-side Gemini AI Service Proxy.
@@ -16,7 +17,7 @@ export const getGeminiResponseStream = async (
   onChunk: (text: string) => void
 ): Promise<string> => {
   try {
-    const response = await fetch('/api/gemini/stream', {
+    const response = await fetch(getApiUrl('/api/gemini/stream'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -78,7 +79,7 @@ export const getGeminiResponse = async (
  */
 export const analyzeImage = async (base64Image: string, prompt: string): Promise<string | null> => {
   try {
-    const response = await fetch('/api/gemini/analyze-image', {
+    const response = await fetch(getApiUrl('/api/gemini/analyze-image'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

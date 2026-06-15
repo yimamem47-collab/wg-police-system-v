@@ -3,6 +3,7 @@ import { Users, Plus, Search, Trash2, Edit2, Phone, Calendar, MapPin, Check, Ref
 import { MissingPerson } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../lib/translations';
+import { SafeImage } from './SafeImage';
 
 interface MissingPersonsProps {
   missingPersons: MissingPerson[];
@@ -219,11 +220,11 @@ export function MissingPersons({ missingPersons, lang, onAdd, onUpdate, onDelete
                 {/* Photo Header */}
                 <div className="relative aspect-video w-full bg-slate-800 rounded-t-2xl overflow-hidden border-b border-brand-border">
                   {person.photo ? (
-                    <img 
+                    <SafeImage 
                       src={person.photo} 
                       alt={person.name} 
                       className="w-full h-full object-cover" 
-                      referrerPolicy="no-referrer"
+                      lang={lang}
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-500">

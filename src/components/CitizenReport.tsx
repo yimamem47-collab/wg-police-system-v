@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Language, translations } from '../lib/translations';
 import { auth } from '../firebase';
 import { VoiceRecorder } from './VoiceRecorder';
+import { SafeImage } from './SafeImage';
 
 interface CitizenReportProps {
   type: 'Crime' | 'Traffic';
@@ -301,7 +302,7 @@ export function CitizenReport({ type, lang, onClose, onSubmit }: CitizenReportPr
                   <div className="grid grid-cols-4 gap-4">
                     {formData.photos.map((photo, index) => (
                       <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-brand-border group">
-                        <img src={photo} alt="Incident" className="w-full h-full object-cover" />
+                        <SafeImage src={photo} alt="Incident" className="w-full h-full object-cover" lang={lang} />
                         <button 
                           type="button"
                           onClick={() => removePhoto(index)}

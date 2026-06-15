@@ -7,6 +7,7 @@ import { IncidentMap } from './IncidentMap';
 import { FilePicker } from '@capawesome/capacitor-file-picker';
 import { Capacitor } from '@capacitor/core';
 import { VoiceRecorder } from './VoiceRecorder';
+import { SafeImage } from './SafeImage';
 
 interface IncidentsProps {
   incidents: Incident[];
@@ -623,7 +624,7 @@ export function Incidents({ incidents, officers, lang, initialEditId, onAdd, onU
               <div className="grid grid-cols-4 gap-4">
                 {(newIncident.photos || []).map((photo, index) => (
                   <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-brand-border group">
-                    <img src={photo} alt="Incident" className="w-full h-full object-cover" />
+                    <SafeImage src={photo} alt="Incident" className="w-full h-full object-cover" lang={lang} />
                     <button 
                       type="button"
                       onClick={() => removePhoto(index)}
