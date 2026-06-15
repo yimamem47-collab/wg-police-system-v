@@ -142,24 +142,6 @@
         "category": { "type": "string" }
       }
     },
-    "CorruptionReport": {
-      "title": "CorruptionReport",
-      "description": "Report of corruption or unethical behavior",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "tipType": { "type": "string" },
-        "reporterName": { "type": "string" },
-        "reporterPhone": { "type": "string" },
-        "reporterEmail": { "type": "string" },
-        "details": { "type": "string" },
-        "location": { "type": "string" },
-        "woreda": { "type": "string" },
-        "other": { "type": "string" },
-        "timestamp": { "type": "string" },
-        "status": { "type": "string" }
-      }
-    },
     "User": {
       "title": "User",
       "description": "A system user",
@@ -227,6 +209,7 @@
     "/zone_detailed_reports": { "schema": "ZoneReport", "description": "Detailed zone reports" },
     "/chat_messages": { "schema": "ChatMessage", "description": "AI Assistant chat history" },
     "/police_scans": { "schema": "PoliceScan", "description": "Collection of police scans" },
-    "/community_reports": { "schema": "CommunityReport", "description": "Citizen reported tips and crimes" }
+    "/community_reports": { "schema": "CommunityReport", "description": "Citizen reported tips and crimes" },
+    "/corruption_reports": { "schema": "CorruptionReport", "description": "Corruption tips reported by citizens" }
   }
 }

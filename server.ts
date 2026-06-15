@@ -78,7 +78,10 @@ const FILES_TO_SYNC = [
   // Public assets
   "public/police-logo.png",
   "public/logo.png",
-  "public/favicon.ico"
+  "public/favicon.ico",
+  "public/manifest.json",
+  "public/sw.js",
+  "public/apple-touch-icon.png"
 ];
 
 async function startServer() {
