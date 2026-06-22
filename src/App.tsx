@@ -561,9 +561,9 @@ export default function App() {
     // Play welcome voice
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance("በጀግንነት መጠበቅ፣ በሰብዓዊነት ማገልገል");
-      utterance.lang = 'am-ET';
-      utterance.rate = 0.85; // Slightly slower for a majestic feel
+      const utterance = new SpeechSynthesisUtterance("To live in the present. To contribute to the community. To help others.");
+      utterance.lang = 'en-US';
+      utterance.rate = 0.9;
       
       // Try to speak (may be blocked by browser autoplay policies until user interaction)
       window.speechSynthesis.speak(utterance);
@@ -571,7 +571,7 @@ export default function App() {
 
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, 3000);
+    }, 4000); // 4 seconds is better to allow English speech list to finish
     return () => clearTimeout(timer);
   }, []);
 
@@ -602,8 +602,8 @@ export default function App() {
           transition={{ delay: 0.5 }}
           className="mt-12 text-center"
         >
-          <h1 className="text-2xl font-bold text-white mb-2">የምዕራብ ጎጃም ዞን ፖሊስ የአመራር ስርዓት</h1>
-          <p className="text-[#FFD700] font-medium tracking-widest uppercase text-xs">West Gojjam Zone Police Management System</p>
+          <h1 className="text-2xl font-bold text-white mb-2">የምዕራብ ጎጃም ዞን ፖሊስ መምሪያ</h1>
+          <p className="text-[#FFD700] font-medium tracking-widest uppercase text-xs">West Gojjam Zone Police Department</p>
           <div className="mt-8 flex justify-center gap-1">
             {[0, 1, 2].map((i) => (
               <motion.div

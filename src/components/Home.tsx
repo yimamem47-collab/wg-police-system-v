@@ -144,7 +144,7 @@ export function Home({
             <div className="flex flex-col">
               <span className="text-lg font-bold tracking-tight leading-none text-brand-text-primary">West Gojjam Police</span>
               <span className="text-[8px] font-bold text-brand-accent uppercase tracking-widest mt-0.5 opacity-80 font-mono italic">
-                Official Management System
+                {t.officialManagementSystem}
               </span>
             </div>
           </div>
