@@ -27,8 +27,13 @@ public class MainActivity extends BridgeActivity {
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
         
-        // Initialize Firebase Firestore
-        db = FirebaseFirestore.getInstance();
+        // Initialize Firebase Firestore safely to prevent crashes on startup if google-services.json is missing
+        try {
+            db = FirebaseFirestore.getInstance();
+            Log.d(TAG, "Firebase Firestore initialized successfully");
+        } catch (Exception e) {
+            Log.e(TAG, "Firebase Firestore initialization failed! Ensure google-services.json is added.", e);
+        }
         
         // Initialize Location Services
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -49,6 +54,10 @@ public class MainActivity extends BridgeActivity {
      * This can be called from JavaScript via a custom Capacitor plugin if needed.
      */
     public void sendReportToFirebase(String type, String data) {
+        if (db == null) {
+            Log.e(TAG, "Firebase Firestore is not initialized. Cannot send report.");
+            return;
+        }
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
                 Map<String, Object> report = new HashMap<>();
