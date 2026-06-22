@@ -2,7 +2,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.westgojjam.police',
-  appName: 'West Gojjam Zone Police Management System',
+  appName: 'West Gojjam Zone Police Department',
   webDir: 'dist',
   bundledWebRuntime: false,
   server: {

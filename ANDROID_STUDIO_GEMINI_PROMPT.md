@@ -183,14 +183,18 @@ public class MainActivity extends BridgeActivity {
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
         
-        // Initialize Firebase Firestore and Enable Offline Database Persistence
-        db = FirebaseFirestore.getInstance();
-        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
-            .setPersistenceEnabled(true) // ✅ Auto-sync reports when offline officers regain signal!
-            .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
-            .build();
-        db.setFirestoreSettings(settings);
-        Log.d(TAG, "Firebase Offline Persistence Enabled successfully.");
+        // Initialize Firebase Firestore and Enable Offline Database Persistence Safely
+        try {
+            db = FirebaseFirestore.getInstance();
+            FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                .setPersistenceEnabled(true) // ✅ Auto-sync reports when offline officers regain signal!
+                .setCacheSizeBytes(FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED)
+                .build();
+            db.setFirestoreSettings(settings);
+            Log.d(TAG, "Firebase Offline Persistence Enabled successfully.");
+        } catch (Exception e) {
+            Log.e(TAG, "Firebase Firestore initialization failed! App will still open safely.", e);
+        }
         
         // Initialize Location Services for live crime alerts
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
@@ -229,6 +233,10 @@ public class MainActivity extends BridgeActivity {
      * Native method to sync report offline or online back to firestore.
      */
     public void sendReportToFirebase(String type, String data) {
+        if (db == null) {
+            Log.e(TAG, "Firebase Firestore is not initialized. Cannot send report.");
+            return;
+        }
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fusedLocationClient.getLastLocation().addOnSuccessListener(this, location -> {
                 Map<String, Object> report = new HashMap<>();

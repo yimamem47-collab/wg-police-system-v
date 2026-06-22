@@ -46,9 +46,9 @@ export default defineConfig(({mode}) => {
           ]
         },
         manifest: {
-          name: 'West Gojjam Police Management System',
+          name: 'West Gojjam Police Department',
           short_name: 'WG Police',
-          description: 'Official Management System for West Gojjam Zone Police',
+          description: 'Official System for West Gojjam Zone Police Department',
           theme_color: '#002B5B',
           background_color: '#ffffff',
           display: 'standalone',

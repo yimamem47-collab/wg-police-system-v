@@ -86,6 +86,18 @@ const FILES_TO_SYNC = [
 
 async function startServer() {
   const app = express();
+
+  // Enable CORS manually to allow native Capacitor mobile applications on Android/iOS to contact the server APIs
+  app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+
   app.use(express.json({ limit: '20mb' })); // support larger base64 image scanning payloads
 
   // Helper for escaping HTML strings
