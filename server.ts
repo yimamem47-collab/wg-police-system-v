@@ -112,8 +112,8 @@ async function startServer() {
 
   // Helper for sending Telegram messages
   async function sendServerTelegramMessage(message: string) {
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-    const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "7611590740:AAEx9u-P07Y3o4mG5_E_nK4T-q8Pz5mE8Yk";
+    const CHAT_ID = process.env.TELEGRAM_CHAT_ID || "1452664718";
     if (!BOT_TOKEN || !CHAT_ID) {
       console.warn("Server Telegram config missing.");
       return;
@@ -542,8 +542,8 @@ After every interaction end with:
     const { message, html = true } = req.body;
     
     // Use environment variables or hardcoded fallbacks provided by user
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-    const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "7611590740:AAEx9u-P07Y3o4mG5_E_nK4T-q8Pz5mE8Yk";
+    const CHAT_ID = process.env.TELEGRAM_CHAT_ID || "1452664718";
 
     if (!BOT_TOKEN || !CHAT_ID) {
       return res.status(500).json({ error: "Telegram configuration (TOKEN or CHAT_ID) is missing on server" });
