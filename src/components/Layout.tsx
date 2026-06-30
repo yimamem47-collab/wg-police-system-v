@@ -26,6 +26,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { Language, translations } from '../lib/translations';
 import { onFirestoreStatusChange } from '../firebase';
+import { openUrl } from '../lib/utils';
 
 interface SidebarItemProps {
   key?: string;
@@ -268,6 +269,10 @@ export function Layout({ children, activeTab, setActiveTab, onBack, onLogout, us
                 href="https://www.facebook.com/share/1CCxnhaNmX/" 
                 target="_blank" 
                 rel="noopener noreferrer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  openUrl('https://www.facebook.com/share/1CCxnhaNmX/');
+                }}
                 className="flex items-center gap-2 text-[#1877F2] hover:text-[#166fe5] transition-colors font-medium bg-white/5 px-4 py-2 rounded-full border border-white/10 hover:bg-white/10"
               >
                 <Facebook size={20} />
@@ -277,6 +282,10 @@ export function Layout({ children, activeTab, setActiveTab, onBack, onLogout, us
                 href="https://t.me/westgojjamepolice" 
                 target="_blank" 
                 rel="noopener noreferrer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  openUrl('https://t.me/westgojjamepolice');
+                }}
                 className="flex items-center gap-2 text-[#229ED9] hover:text-[#2094cc] transition-colors font-medium bg-white/5 px-4 py-2 rounded-full border border-white/10 hover:bg-white/10"
               >
                 <Send size={20} />

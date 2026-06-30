@@ -3,7 +3,18 @@ import { Capacitor } from '@capacitor/core';
 
 export const openUrl = async (url: string) => {
   if (Capacitor.isNativePlatform()) {
-    await Browser.open({ url });
+    try {
+      // Direct call to system browser via window.open (extremely reliable in Capacitor webviews)
+      window.open(url, '_system');
+      
+      // Also invoke the Browser plugin as a parallel standard method
+      await Browser.open({ url }).catch((err) => {
+        console.warn("Capacitor Browser.open failed, fallback to system webview window:", err);
+      });
+    } catch (e) {
+      console.warn("Capacitor openUrl failed, calling direct window open:", e);
+      window.open(url, '_system');
+    }
   } else {
     window.open(url, '_blank', 'noopener,noreferrer');
   }

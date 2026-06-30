@@ -83,11 +83,18 @@ export function CommunityReports({ lang }: CommunityReportsProps) {
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, 'community_reports'), {
+      // Write to Firestore with timeout safety (will succeed immediately or queue offline)
+      const docPromise = addDoc(collection(db, 'community_reports'), {
         ...newReport,
         status: 'New',
         timestamp: serverTimestamp()
       });
+
+      // Wait at most 2 seconds for Firestore to register, then proceed so the UI never hangs
+      await Promise.race([
+        docPromise,
+        new Promise((resolve) => setTimeout(resolve, 2000))
+      ]);
 
       setIsModalOpen(false);
       setNewReport({

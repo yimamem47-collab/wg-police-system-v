@@ -23,6 +23,17 @@ export function getApiUrl(path: string): string {
     return `${DEFAULT_REMOTE_HOST}${path}`;
   }
 
+  // Detect if running on an external static hosting environment like Vercel or Netlify
+  const hostname = window.location.hostname;
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0';
+  const isCloudRun = hostname.endsWith('europe-west2.run.app');
+
+  // If we are not on localhost and not on Cloud Run, we are deployed on an external domain (e.g., Vercel)
+  // We must route API requests directly to our active Cloud Run backend where API keys and proxies are loaded
+  if (!isLocalhost && !isCloudRun) {
+    return `${DEFAULT_REMOTE_HOST}${path}`;
+  }
+
   // Default to relative path for normal web context
   return path;
 }

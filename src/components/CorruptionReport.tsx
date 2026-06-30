@@ -36,19 +36,33 @@ export function CorruptionReport({ lang, onClose }: CorruptionReportProps) {
 
     setStatus('submitting');
     try {
-      await addDoc(collection(db, 'corruption_reports'), {
-        ...formData,
-        submittedBy: auth.currentUser?.uid || 'anonymous',
-        submittedByName: auth.currentUser?.displayName || 'Anonymous',
-        status: 'New',
-        timestamp: serverTimestamp(),
-        source: 'Citizen Form'
-      });
+      // 1. Write to Firestore with timeout safety (will succeed immediately or queue offline)
+      try {
+        const docPromise = addDoc(collection(db, 'corruption_reports'), {
+          ...formData,
+          submittedBy: auth.currentUser?.uid || 'anonymous',
+          submittedByName: auth.currentUser?.displayName || 'Anonymous',
+          status: 'New',
+          timestamp: serverTimestamp(),
+          source: 'Citizen Form'
+        });
+
+        // Wait at most 2 seconds for Firestore to register, then proceed so the UI never hangs
+        await Promise.race([
+          docPromise,
+          new Promise((resolve) => setTimeout(resolve, 2000))
+        ]);
+      } catch (firestoreError) {
+        console.warn("Firestore write queued offline or failed:", firestoreError);
+      }
 
       // Send to Telegram using service for consistency
       const telegramMessage = `🚨 <b>አዲስ የሙስና ጥቆማ / New Corruption Tip</b>\n---------------------------\n<b>Type:</b> ${formData.tipType}\n<b>Reporter:</b> ${formData.reporterName}\n<b>Phone:</b> ${formData.reporterPhone}\n<b>Woreda:</b> ${formData.woreda}\n<b>Location:</b> ${formData.location}\n---------------------------\n<b>Details:</b>\n${formData.details}`;
       
-      await sendTelegramMessage(telegramMessage);
+      // Send Telegram notification in background so it doesn't block completion
+      sendTelegramMessage(telegramMessage)
+        .then((success) => console.log("Telegram corruption alert result:", success))
+        .catch((e) => console.error("Error sending background Telegram corruption alert:", e));
 
       setStatus('success');
     } catch (error) {

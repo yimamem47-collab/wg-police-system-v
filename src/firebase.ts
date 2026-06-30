@@ -13,6 +13,7 @@ import {
   clearIndexedDbPersistence
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { Capacitor } from "@capacitor/core";
 import firebaseAppletConfig from "../firebase-applet-config.json";
 
 // Hybrid configuration: Prefer environment variables (for Vercel), fallback to applet config (for AI Studio)
@@ -62,11 +63,14 @@ const isSandboxed = window.location.hostname.includes('ais-dev') ||
                    window.location.hostname.includes('ais-pre') || 
                    window.location.hostname === 'localhost';
 
-// Initialize Firestore with robust settings. Use multi-tab persistent cache by default.
+// Initialize Firestore with robust settings. Use multi-tab persistent cache by default for browsers.
+// On native mobile (Capacitor), do NOT use tabManager because native apps only run in a single WebView.
 // In sandboxed/iframe environments where third-party IndexedDB might be blocked by browser privacy settings,
 // our try-catch initialization block below will automatically catch any DOMException and fall back to memoryLocalCache().
 export const firestoreSettings: any = {
-  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  localCache: Capacitor.isNativePlatform()
+    ? persistentLocalCache({}) // Single tab manager for mobile to prevent IndexedDB locking
+    : persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
   ignoreUndefinedProperties: true,
 };
 

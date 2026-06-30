@@ -131,17 +131,35 @@ export function CommunityReportForm({ lang, onBack }: CommunityReportFormProps) 
         timestamp: serverTimestamp()
       };
 
-      await addDoc(collection(db, 'community_reports'), reportData);
-      
-      // Send Telegram notification
-      let filesString = uploadedFileUrls.length > 0 
-        ? `\n<b>Attachments (${uploadedFileUrls.length}):</b>\n${uploadedFileUrls.map((url, i) => `<a href="${url}">File ${i+1}</a>`).join(', ')}`
-        : "";
-      
-      let voiceString = voiceUrl ? `\n<b>Voice Note:</b> <a href="${voiceUrl}">Listen</a>` : "";
+      // 1. Write to Firestore with timeout safety (will succeed immediately or queue offline)
+      try {
+        const docPromise = addDoc(collection(db, 'community_reports'), reportData);
         
-      const message = `🚨 <b>አዲስ የማህበረሰብ ሪፖርት / New Community Report</b>\n---------------------------\n<b>Name:</b> ${escapeHtml(report.reporterName)}\n<b>Phone:</b> ${escapeHtml(report.reporterPhone)}\n<b>Location:</b> ${escapeHtml(report.location)}\n<b>Date:</b> ${escapeHtml(report.date)}\n---------------------------\n<b>Details:</b>\n${escapeHtml(report.details)}${filesString}${voiceString}`;
-      await sendTelegramMessage(message);
+        // Wait at most 2 seconds for Firestore to register, then proceed so the UI never hangs
+        await Promise.race([
+          docPromise,
+          new Promise((resolve) => setTimeout(resolve, 2000))
+        ]);
+      } catch (firestoreError) {
+        console.warn("Firestore write queued offline or failed:", firestoreError);
+      }
+      
+      // Send Telegram notification in the background (best effort)
+      try {
+        let filesString = uploadedFileUrls.length > 0 
+          ? `\n<b>Attachments (${uploadedFileUrls.length}):</b>\n${uploadedFileUrls.map((url, i) => `<a href="${url}">File ${i+1}</a>`).join(', ')}`
+          : "";
+        
+        let voiceString = voiceUrl ? `\n<b>Voice Note:</b> <a href="${voiceUrl}">Listen</a>` : "";
+          
+        const message = `🚨 <b>አዲስ የማህበረሰብ ሪፖርት / New Community Report</b>\n---------------------------\n<b>Name:</b> ${escapeHtml(report.reporterName)}\n<b>Phone:</b> ${escapeHtml(report.reporterPhone)}\n<b>Location:</b> ${escapeHtml(report.location)}\n<b>Date:</b> ${escapeHtml(report.date)}\n---------------------------\n<b>Details:</b>\n${escapeHtml(report.details)}${filesString}${voiceString}`;
+        
+        sendTelegramMessage(message)
+          .then((success) => console.log("Telegram notification background result:", success))
+          .catch((e) => console.error("Error sending background Telegram notification:", e));
+      } catch (tgError) {
+        console.error("Error preparing Telegram notification:", tgError);
+      }
 
       // Send to Google Sheets
       const sheetURL = "https://script.google.com/macros/s/AKfycbw2Bkjrv9SbObSFs0xOlcONYKJKpsa_lqSu2to4PfIKlHoP8U5KVMj0DQYrkvkS_jYS/exec";

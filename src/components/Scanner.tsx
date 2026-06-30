@@ -7,6 +7,7 @@ import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
 import { analyzeImage } from '../services/geminiService';
+import { sendTelegramMessage } from '../services/telegramService';
 
 interface ScannerProps {
   lang: Language;
@@ -115,32 +116,33 @@ export function Scanner({ lang, onClose }: ScannerProps) {
   const handleScanSuccess = async (data: string) => {
     setStatus('sending');
     
+    // 1. Write to Firestore with timeout safety (will succeed immediately or queue offline)
     try {
       if (auth.currentUser) {
-        await addDoc(collection(db, 'police_scans'), {
+        const docPromise = addDoc(collection(db, 'police_scans'), {
           data: data,
           officerId: auth.currentUser.uid,
           officerName: auth.currentUser.displayName || 'Officer',
           timestamp: serverTimestamp()
         });
+
+        // Wait at most 2 seconds for Firestore to register, then proceed so the UI never hangs
+        await Promise.race([
+          docPromise,
+          new Promise((resolve) => setTimeout(resolve, 2000))
+        ]);
       }
     } catch (error) {
-      console.error("Firestore error:", error);
+      console.warn("Firestore scan log write queued offline or failed:", error);
     }
 
     const officerName = auth.currentUser?.displayName || 'Unknown Officer';
-    const message = `🚨 አዲስ የስካን መረጃ 🚨\n\n📌 መረጃ: ${data}\n👤 መርማሪ: ${officerName}`;
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    const message = `🚨 <b>አዲስ የስካን መረጃ</b>\n\n<b>📌 መረጃ:</b> ${data}\n<b>👤 መርማሪ:</b> ${officerName}`;
 
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: message })
-      });
-
-      const result = await response.json();
-      if (result.ok) {
+      // 2. Send via our secure backend proxy which works reliably under all network conditions on physical Android devices
+      const success = await sendTelegramMessage(message);
+      if (success) {
         setStatus('success');
       } else {
         setStatus('error');

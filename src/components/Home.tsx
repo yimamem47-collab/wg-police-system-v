@@ -83,47 +83,55 @@ export function Home({
     const message = `🚨 አዲስ የፖሊስ ጥቆማ፦\n\n${escapeHtml(quickTip)}`;
     
     try {
-      // Send to Telegram and Firebase in parallel
-      const [telegramSuccess] = await Promise.all([
-        sendTelegramMessage(message),
-        addDoc(collection(db, 'quick_tips'), {
+      // 1. Write to Firestore with timeout safety (will succeed immediately or queue offline)
+      try {
+        const docPromise = addDoc(collection(db, 'quick_tips'), {
           tip: quickTip,
           timestamp: serverTimestamp()
-        }).catch(e => console.error("Error saving to Firebase:", e))
-      ]);
-      
-      if (telegramSuccess) {
-        // Send to Google Sheets (using the same URL, but with different fields)
-        const sheetURL = "https://script.google.com/macros/s/AKfycbw2Bkjrv9SbObSFs0xOlcONYKJKpsa_lqSu2to4PfIKlHoP8U5KVMj0DQYrkvkS_jYS/exec";
-        const reportData = {
-          name: 'Anonymous Tip',
-          phone: '',
-          email: '',
-          message: quickTip,
-          location: '',
-          date: new Date().toISOString().split('T')[0],
-          status: 'New Tip'
-        };
+        });
         
-        console.log("Sending quick tip to Google Sheets:", reportData);
-        
-        // Send to Google Sheets in the background without blocking
-        fetch(sheetURL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(reportData)
-        }).then(() => console.log("Quick tip successfully sent to Google Sheets"))
-          .catch(e => console.error("Error sending tip to Google Sheets:", e));
-
-        setSent(true);
-        setQuickTip('');
-        setTimeout(() => setSent(false), 3000);
-      } else {
-        alert(t.sendTipError || 'An error occurred! Please try again later.');
+        // Wait at most 2 seconds for Firestore, then proceed so the UI never hangs
+        await Promise.race([
+          docPromise,
+          new Promise((resolve) => setTimeout(resolve, 2000))
+        ]);
+      } catch (firestoreError) {
+        console.warn("Firestore write queued offline or failed:", firestoreError);
       }
+
+      // 2. Send to Telegram in the background (best effort)
+      sendTelegramMessage(message)
+        .then((success) => console.log("Telegram notification background result:", success))
+        .catch((e) => console.error("Error sending background Telegram notification:", e));
+
+      // 3. Send to Google Sheets in the background (best effort)
+      const sheetURL = "https://script.google.com/macros/s/AKfycbw2Bkjrv9SbObSFs0xOlcONYKJKpsa_lqSu2to4PfIKlHoP8U5KVMj0DQYrkvkS_jYS/exec";
+      const reportData = {
+        name: 'Anonymous Tip',
+        phone: '',
+        email: '',
+        message: quickTip,
+        location: '',
+        date: new Date().toISOString().split('T')[0],
+        status: 'New Tip'
+      };
+      
+      console.log("Sending quick tip to Google Sheets:", reportData);
+      
+      fetch(sheetURL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportData)
+      }).then(() => console.log("Quick tip successfully sent to Google Sheets"))
+        .catch(e => console.error("Error sending tip to Google Sheets:", e));
+
+      // 4. Show success to the user immediately
+      setSent(true);
+      setQuickTip('');
+      setTimeout(() => setSent(false), 3000);
     } catch (error) {
       console.error("Error submitting quick tip:", error);
       alert(t.sendTipError || 'An error occurred! Please try again later.');
