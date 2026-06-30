@@ -261,6 +261,47 @@ public class MainActivity extends BridgeActivity {
 
 ---
 
+### 🚨 CRITICAL WARNING FOR BUILDING THE APK (አስቸኳይ እና ወሳኝ ማስጠንቀቂያ) 🚨
+
+If you download this project to your computer and build the APK in Android Studio, **YOU MUST RUN THE BUILD AND SYNC COMMANDS ON YOUR COMPUTER FIRST!** If you skip this, Android Studio will build the **old, outdated version** of your code, and none of our fixes (the Corruption Report, Facebook/Telegram links, or Firebase) will be inside your APK!
+
+ይህንን አፕሊኬሽን ወደ ኮምፒውተርዎ ካወረዱት በኋላ በአንድሮይድ ስቱዲዮ ወደ ኤፒኬ (APK) ከመቀየርዎ በፊት **በቅድሚያ ይህንን መመሪያ በኮምፒውተርዎ ላይ መፈጸም አለብዎት!** ይህንን ካላደረጉ አንድሮይድ ስቱዲዮ የሚሰራው **የድሮውን እና ያልተስተካከለውን ኮድ** ስለሚሆን አዲሱ የሙስና ሪፖርት፣ የቴሌግራም እና የፌስቡክ ሊንኮች እንዲሁም ፋየርቤዝ አይሰሩም!
+
+#### 🛠️ Local Build Steps (ኤፒኬ ከመገንባትዎ በፊት በኮምፒውተርዎ ላይ የሚሰሩት ትዕዛዞች)፦
+1. Open the project folder in your computer's Terminal / Command Prompt (ፕሮጀክቱን በኮምፒውተርዎ ተርሚናል ላይ ይክፈቱት)።
+2. Run these three commands in order (እነዚህን ሶስት ትዕዛዞች በቅደም ተከተል ያስኪዱ)፦
+   ```bash
+   npm install
+   npm run build
+   npx cap sync android
+   ```
+3. Only AFTER these commands complete successfully, open Android Studio and click **Build -> Build Bundle(s) / APK(s) -> Build APK(s)**.
+
+---
+
+### Part 4: Ultra-Focused Prompt for Android Studio Gemini (ልክ እንደደረሱ ኮፒ አድርገው ለጀመናይ የሚሰጡት አጭር ፕሮምፕት)
+
+Copy and paste this exact prompt into Android Studio's Gemini AI to instantly fix all mobile-specific network, link, and Firebase connection issues:
+
+```text
+Act as an Android development expert. I am building the "West Gojjam Zone Police Management System" (Ethiopia) hybrid app using Capacitor. 
+
+On physical Android devices, my APK is experiencing 3 main issues:
+1. Network block / No connectivity: Quick tips and reports are not being sent to Firebase or the Telegram bot (the request fails or hangs).
+2. Facebook & Telegram links are not opening.
+3. The Webview is not loading some modals or local actions properly.
+
+Please inspect my project configuration and help me apply these fixes inside Android Studio:
+1. Ensure 'android.permission.INTERNET' and 'android.permission.ACCESS_NETWORK_STATE' are correctly declared in 'AndroidManifest.xml'.
+2. Enable Cleartext Traffic 'android:usesCleartextTraffic="true"' inside the '<application>' tag in 'AndroidManifest.xml' to allow fetch requests to APIs and bots.
+3. Ensure WebView permits mixed content, DOM storage, and IndexedDB so Firebase Firestore client-side offline caching works.
+4. Verify that Capacitor plugins, specifically '@capacitor/browser', are successfully registered and synchronized on the native Gradle/Java side.
+
+Provide me the exact code snippets and file paths to update so that everything is 100% resolved on physical mobile devices!
+```
+
+---
+
 ### Step-by-Step Integration Checklist (ለአጠቃቀም ቀላል የደረጃ በደረጃ ማረጋገጫ)
 
 1. **Firebase Configuration** (`google-services.json`):
@@ -273,3 +314,27 @@ public class MainActivity extends BridgeActivity {
    - Open your app in mobile, go to **Settings (ማስተካከያ)** -> Scroll to the **Integrations & Connectivity** panel.
    - Enter your deployed Server API URL (or default to the pre-configured production Cloud Run backend) and hit **SAVE**.
    - Your physical Android device will now communicate perfectly with the live servers for all Gemini requests, GitHub syncs, and Telegram alerts over any mobile network.
+
+### 🛠️ Troubleshooting Mobile Issues (በሞባይል ላይ ሊያጋጥሙ የሚችሉ ችግሮች መፍቻ መንገዶች)
+
+በስልክዎ ላይ ሲጭኑት መረጃ የማይልክ ከሆነ ወይም ሊንኮች የማይሰሩ ከሆነ የሚከተሉትን 3 ነገሮች በኮምፒተርዎ (Android Studio) ላይ ማስተካከልዎን ያረጋግጡ፡
+
+1. **የኢንተርኔት ፈቃድ (INTERNET Permission) በ AndroidManifest.xml ውስጥ:**
+   - አፑ ከፋየርቤዝ እና ቴሌግራም ጋር እንዲገናኝ የግድ የኢንተርኔት ፈቃድ ሊኖረው ይገባል።
+   - በ `android/app/src/main/AndroidManifest.xml` ውስጥ `<manifest>` ታግ ውስጥ የሚከተለው መኖሩን ያረጋግጡ፡
+     ```xml
+     <uses-permission android:name="android.permission.INTERNET" />
+     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+     ```
+
+2. **የካፓሲተር ፕለጊኖችን ማመሳሰል (Run Capacitor Sync):**
+   - ዌብሳይቱ ላይ የተደረጉ ለውጦች እና የሊንክ መክፈቻ ፕለጊኖች (Capacitor Browser) ወደ አንድሮይድ ፕሮጀክት እንዲገቡ በኮምፒተርዎ ተርሚናል ላይ ይህንን ትዕዛዝ ያሂዱ፡
+     ```bash
+     npm run build
+     npx cap sync android
+     ```
+   - ይህን ካደረጉ በኋላ አንድሮይድ ስቱዲዮ ላይ **Rebuild Project** አድርገው አዲሱን APK ስልክዎ ላይ ይጫኑት።
+
+3. **የሊንኮች መክፈቻ አስተማማኝ ፎልባክ (Robust Link Opener):**
+   - በስልክዎ ላይ ፌስቡክ እና ቴሌግራም ሊንኮችን ሲጫኑ በስልኩ ብሮውዘር (Chrome) እንዲከፍት አፑን አስተካክለነዋል። አፑ አሁን በራስ-ሰር ፕለጊኑ ባይኖር እንኳ ወደ `window.open(url, '_system')` በመቀየር በስልክዎ ላይ ሊንኮችን ይከፍታል።
+
