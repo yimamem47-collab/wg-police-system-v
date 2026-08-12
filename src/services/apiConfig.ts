@@ -11,7 +11,7 @@ const DEFAULT_REMOTE_HOST = 'https://ais-pre-dv2qu5li6lwo7dput2a5di-281496265411
 
 export function getApiUrl(path: string): string {
   // Try to read custom server URL from local storage
-  const savedUrl = localStorage.getItem('wg_police_api_server_url');
+  const savedUrl = typeof localStorage !== 'undefined' ? localStorage.getItem('wg_police_api_server_url') : null;
   
   if (savedUrl && savedUrl.trim() !== '') {
     const cleanBase = savedUrl.trim().endsWith('/') ? savedUrl.trim().slice(0, -1) : savedUrl.trim();
@@ -23,18 +23,7 @@ export function getApiUrl(path: string): string {
     return `${DEFAULT_REMOTE_HOST}${path}`;
   }
 
-  // Detect if running on an external static hosting environment like Vercel or Netlify
-  const hostname = window.location.hostname;
-  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0';
-  const isCloudRun = hostname.endsWith('europe-west2.run.app');
-
-  // If we are not on localhost and not on Cloud Run, we are deployed on an external domain (e.g., Vercel)
-  // We must route API requests directly to our active Cloud Run backend where API keys and proxies are loaded
-  if (!isLocalhost && !isCloudRun) {
-    return `${DEFAULT_REMOTE_HOST}${path}`;
-  }
-
-  // Default to relative path for normal web context
+  // On all web environments (including Vercel, Netlify, and Cloud Run), use relative path
   return path;
 }
 

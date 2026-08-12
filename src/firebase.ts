@@ -52,20 +52,38 @@ if (typeof window !== 'undefined') {
   });
 }
 
+// Safe environment variable getter for both Node/Vercel (process.env) and Vite (import.meta.env)
+const getEnv = (key: string): string | undefined => {
+  const globalProc = typeof globalThis !== 'undefined' ? (globalThis as any).process : undefined;
+  if (globalProc && globalProc.env && globalProc.env[key]) {
+    return globalProc.env[key];
+  }
+  try {
+    // @ts-ignore
+    if (typeof import.meta !== "undefined" && import.meta.env) {
+      // @ts-ignore
+      return import.meta.env[key];
+    }
+  } catch {
+    // ignore
+  }
+  return undefined;
+};
+
 // Hybrid configuration: Prefer environment variables (for Vercel), fallback to applet config (for AI Studio)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseAppletConfig.apiKey,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseAppletConfig.authDomain,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseAppletConfig.projectId,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseAppletConfig.storageBucket,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseAppletConfig.messagingSenderId,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseAppletConfig.appId,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || firebaseAppletConfig.measurementId,
-  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseAppletConfig.firestoreDatabaseId
+  apiKey: getEnv("VITE_FIREBASE_API_KEY") || firebaseAppletConfig.apiKey,
+  authDomain: getEnv("VITE_FIREBASE_AUTH_DOMAIN") || firebaseAppletConfig.authDomain,
+  projectId: getEnv("VITE_FIREBASE_PROJECT_ID") || firebaseAppletConfig.projectId,
+  storageBucket: getEnv("VITE_FIREBASE_STORAGE_BUCKET") || firebaseAppletConfig.storageBucket,
+  messagingSenderId: getEnv("VITE_FIREBASE_MESSAGING_SENDER_ID") || firebaseAppletConfig.messagingSenderId,
+  appId: getEnv("VITE_FIREBASE_APP_ID") || firebaseAppletConfig.appId,
+  measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID") || firebaseAppletConfig.measurementId,
+  firestoreDatabaseId: getEnv("VITE_FIREBASE_FIRESTORE_DATABASE_ID") || firebaseAppletConfig.firestoreDatabaseId
 };
 
 // Use the firestoreDatabaseId from the config, but ignore it if it looks like an API key (starts with AIza)
-const rawDbId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseAppletConfig.firestoreDatabaseId;
+const rawDbId = getEnv("VITE_FIREBASE_FIRESTORE_DATABASE_ID") || firebaseAppletConfig.firestoreDatabaseId;
 const dbId = rawDbId && rawDbId !== "(default)" && !rawDbId.startsWith("AIza") && !rawDbId.includes(",")
   ? rawDbId 
   : undefined;

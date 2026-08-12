@@ -9,7 +9,24 @@ export interface SyncResult {
   message: string;
 }
 
-const GITHUB_TOKEN = import.meta.env.VITE_GITHUB_TOKEN;
+const getEnv = (key: string): string | undefined => {
+  const globalProc = typeof globalThis !== 'undefined' ? (globalThis as any).process : undefined;
+  if (globalProc && globalProc.env && globalProc.env[key]) {
+    return globalProc.env[key];
+  }
+  try {
+    // @ts-ignore
+    if (typeof import.meta !== "undefined" && import.meta.env) {
+      // @ts-ignore
+      return import.meta.env[key];
+    }
+  } catch {
+    // ignore
+  }
+  return undefined;
+};
+
+const GITHUB_TOKEN = getEnv("VITE_GITHUB_TOKEN");
 const REPO_OWNER = "yimamem47-collab";
 const REPO_NAME = "west-gojjame-police";
 
