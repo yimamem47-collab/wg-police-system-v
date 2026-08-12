@@ -167,3 +167,20 @@ export interface NewsItem {
   photo?: string;
   timestamp?: string;
 }
+
+export interface ShiftLog {
+  id: string;
+  officerId: string;
+  officerName: string;
+  badgeNumber?: string;
+  station?: string;
+  dutyType?: string;
+  startTime: string;
+  endTime?: string | null;
+  durationSeconds?: number;
+  status: 'Active' | 'Completed' | 'Paused';
+  location?: string;
+  notes?: string;
+  incidentsHandledCount?: number;
+  timestamp?: string;
+}

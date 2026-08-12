@@ -179,15 +179,19 @@ export function CommunityReportForm({ lang, onBack }: CommunityReportFormProps) 
       console.log("Sending report to Google Sheets:", sheetData);
       
       // Send to Google Sheets in the background without blocking
-      fetch(sheetURL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(sheetData)
-      }).then(() => console.log("Data successfully sent to Google Sheets (no-cors mode)"))
-        .catch(error => console.error("Error sending to Google Sheets:", error));
+      try {
+        fetch(sheetURL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'text/plain',
+          },
+          body: JSON.stringify(sheetData)
+        }).then(() => console.log("Data successfully sent to Google Sheets (no-cors mode)"))
+          .catch(error => console.error("Error sending to Google Sheets:", error));
+      } catch (sheetError) {
+        console.warn("Google Sheets background fetch failed to dispatch:", sheetError);
+      }
       
       setIsSuccess(true);
     } catch (error) {

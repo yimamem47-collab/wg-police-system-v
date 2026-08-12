@@ -101,42 +101,12 @@ export function AIAssistant({
     }
   };
 
-  const speakText = async (text: string) => {
-    // Always prioritize window.speechSynthesis as requested
-    if (!('speechSynthesis' in window)) return;
-
-    if (isSpeaking) {
+  const speakText = async (_text: string) => {
+    if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      return;
     }
-
-    if (!text) return;
-
-    setIsSpeaking(true);
-    window.speechSynthesis.cancel();
-    
-    // Clean text for speech (remove markdown)
-    const cleanText = text.replace(/[*#_`~]/g, '').replace(/\[.*?\]\(.*?\)/g, '');
-    
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    
-    // Try to find an Amharic voice if language is Amharic
-    if (lang === 'am') {
-      const voices = window.speechSynthesis.getVoices();
-      const amharicVoice = voices.find(v => v.lang.includes('am') || v.lang.includes('ET'));
-      if (amharicVoice) {
-        utterance.voice = amharicVoice;
-      }
-      utterance.lang = 'am-ET';
-    } else {
-      utterance.lang = 'en-US';
-    }
-
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-    
-    window.speechSynthesis.speak(utterance);
+    setIsSpeaking(false);
+    return;
   };
 
   useEffect(() => {
@@ -217,8 +187,10 @@ export function AIAssistant({
         sender: 'ai'
       }, false, aiMessageId);
 
-      // Auto-speak the final response
-      speakText(aiResponse);
+      // Auto-speak disabled upon user request
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
     } catch (error) {
       console.error('Chat error:', error);
       await addChatMessage({

@@ -118,15 +118,19 @@ export function Home({
       
       console.log("Sending quick tip to Google Sheets:", reportData);
       
-      fetch(sheetURL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(reportData)
-      }).then(() => console.log("Quick tip successfully sent to Google Sheets"))
-        .catch(e => console.error("Error sending tip to Google Sheets:", e));
+      try {
+        fetch(sheetURL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'text/plain',
+          },
+          body: JSON.stringify(reportData)
+        }).then(() => console.log("Quick tip successfully sent to Google Sheets"))
+          .catch(e => console.error("Error sending tip to Google Sheets:", e));
+      } catch (sheetError) {
+        console.warn("Google Sheets background fetch failed to dispatch:", sheetError);
+      }
 
       // 4. Show success to the user immediately
       setSent(true);
@@ -560,7 +564,7 @@ export function Home({
               <span>Facebook</span>
             </button>
             <button 
-              onClick={() => openUrl('https://t.me/westgojjamepolice')}
+              onClick={() => openUrl('https://t.me/+E94nwZyKpCIxOWU8')}
               className="flex items-center gap-2 text-[#229ED9] hover:text-[#2094cc] transition-colors font-medium bg-white/5 px-4 py-2 rounded-full border border-white/10 hover:bg-white/10"
             >
               <Send size={20} />

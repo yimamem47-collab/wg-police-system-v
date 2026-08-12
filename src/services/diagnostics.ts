@@ -97,7 +97,7 @@ export async function testGoogleSheetsConnection(): Promise<DiagnosticResult> {
     const response = await fetch(sheetURL, {
       method: 'POST',
       mode: 'no-cors', // Apps Script web app redirect might cause CORS issues on local dev
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
         name: 'System Diagnostic',
         phone: '0000000000',

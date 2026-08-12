@@ -1,5 +1,12 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  setPersistence, 
+  browserLocalPersistence, 
+  browserSessionPersistence, 
+  inMemoryPersistence 
+} from "firebase/auth";
 import { 
   initializeFirestore, 
   persistentLocalCache, 
@@ -15,6 +22,35 @@ import {
 import { getStorage } from "firebase/storage";
 import { Capacitor } from "@capacitor/core";
 import firebaseAppletConfig from "../firebase-applet-config.json";
+
+// Handle global IndexedDB closing/hidden errors gracefully (e.g., when running in iframe/sandboxed preview)
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason?.message || String(event.reason || '');
+    if (
+      reason.includes('Database is closing') ||
+      reason.includes('Database is hidden') ||
+      reason.includes('closing/hidden') ||
+      reason.includes('IndexedDB') ||
+      reason.includes('Auth persistence error')
+    ) {
+      console.warn("Handled IndexedDB / Auth persistence error gracefully:", reason);
+      event.preventDefault();
+    }
+  });
+
+  window.addEventListener('error', (event) => {
+    const msg = event.message || String(event.error || '');
+    if (
+      msg.includes('Database is closing') ||
+      msg.includes('Database is hidden') ||
+      msg.includes('closing/hidden')
+    ) {
+      console.warn("Handled database closing/hidden error gracefully:", msg);
+      event.preventDefault();
+    }
+  });
+}
 
 // Hybrid configuration: Prefer environment variables (for Vercel), fallback to applet config (for AI Studio)
 const firebaseConfig = {
@@ -53,23 +89,27 @@ export const storage = getStorage(app);
 // Collection names
 export const CRIME_REPORTS_COLLECTION = "WestGojjam_Reports";
 
-// Ensure persistence is set to local
-setPersistence(auth, browserLocalPersistence).catch((err) => {
-  console.error("Auth persistence error:", err);
-});
+// Ensure auth persistence is set with graceful fallbacks for iframe / closing DB scenarios
+setPersistence(auth, browserLocalPersistence)
+  .catch(() => setPersistence(auth, browserSessionPersistence))
+  .catch(() => setPersistence(auth, inMemoryPersistence))
+  .catch((err) => {
+    console.warn("Auth persistence fallback active:", err?.message || err);
+  });
 
 // Initialize Firestore with robust settings
-const isSandboxed = window.location.hostname.includes('ais-dev') || 
-                   window.location.hostname.includes('ais-pre') || 
-                   window.location.hostname === 'localhost';
+const isSandboxed = typeof window !== 'undefined' && (
+  window.location.hostname.includes('ais-dev') || 
+  window.location.hostname.includes('ais-pre') || 
+  window.location.hostname === 'localhost' ||
+  (window.self !== window.top)
+);
 
-// Initialize Firestore with robust settings. Use multi-tab persistent cache by default for browsers.
-// On native mobile (Capacitor), do NOT use tabManager because native apps only run in a single WebView.
-// In sandboxed/iframe environments where third-party IndexedDB might be blocked by browser privacy settings,
-// our try-catch initialization block below will automatically catch any DOMException and fall back to memoryLocalCache().
+// Initialize Firestore with robust settings. Use multi-tab persistent cache for standard browsers.
+// In sandboxed/iframe or native mobile, use persistentLocalCache({}) without multi-tab manager to avoid tab locks.
 export const firestoreSettings: any = {
-  localCache: Capacitor.isNativePlatform()
-    ? persistentLocalCache({}) // Single tab manager for mobile to prevent IndexedDB locking
+  localCache: (Capacitor.isNativePlatform() || isSandboxed)
+    ? persistentLocalCache({})
     : persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
   ignoreUndefinedProperties: true,
 };

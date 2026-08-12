@@ -44,6 +44,7 @@ import { Language, translations } from '../lib/translations';
 import { openUrl, dialPhone } from '../lib/utils';
 import { getApiUrl } from '../services/apiConfig';
 import { CrimeMap } from './CrimeMap';
+import { ShiftTimer } from './ShiftTimer';
 
 interface StatCardProps {
   label: string;
@@ -312,6 +313,9 @@ export function Dashboard({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10 px-1">
         {/* Main Content Column */}
         <div className="lg:col-span-8 space-y-6">
+          {/* Active Duty Shift Timer */}
+          <ShiftTimer user={user} officers={officers} lang={lang} />
+
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
             <StatCard 

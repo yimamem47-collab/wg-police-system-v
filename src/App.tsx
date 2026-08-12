@@ -558,20 +558,14 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Play welcome voice
+    // Silence any speech synthesis
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance("To live in the present. To contribute to the community. To help others.");
-      utterance.lang = 'en-US';
-      utterance.rate = 0.9;
-      
-      // Try to speak (may be blocked by browser autoplay policies until user interaction)
-      window.speechSynthesis.speak(utterance);
     }
 
     const timer = setTimeout(() => {
       setShowSplash(false);
-    }, 4000); // 4 seconds is better to allow English speech list to finish
+    }, 2000);
     return () => clearTimeout(timer);
   }, []);
 
