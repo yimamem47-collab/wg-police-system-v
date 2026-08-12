@@ -112,12 +112,13 @@ async function startServer() {
 
   // Helper for sending Telegram messages
   async function sendServerTelegramMessage(message: string) {
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "7611590740:AAEx9u-P07Y3o4mG5_E_nK4T-q8Pz5mE8Yk";
-    const CHAT_ID = process.env.TELEGRAM_CHAT_ID || "1452664718";
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8914963503:AAEnBeYX8qbRCKG6SUVkC2BUK9OqTvq0p_I";
+    const CHAT_ID = process.env.TELEGRAM_CHAT_ID || "-1004319753390";
     if (!BOT_TOKEN || !CHAT_ID) {
       console.warn("Server Telegram config missing.");
       return;
     }
+    // Formatted API URL: https://api.telegram.org/bot<BOT_TOKEN>/sendMessage?chat_id=<CHAT_ID>&text=
     const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
     try {
       const res = await fetch(url, {
@@ -131,6 +132,9 @@ async function startServer() {
       });
       if (!res.ok) {
         console.error("Telegram API response error:", await res.text());
+        // Fallback using direct query URL format: https://api.telegram.org/bot<TOKEN>/sendMessage?chat_id=<CHAT_ID>&text=<TEXT>
+        const queryUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message.replace(/<[^>]*>?/gm, ''))}`;
+        await fetch(queryUrl).catch((err) => console.error("Telegram URL fallback error:", err));
       }
     } catch (err) {
       console.error("Telegram API fetch error:", err);
@@ -542,8 +546,8 @@ After every interaction end with:
     const { message, html = true } = req.body;
     
     // Use environment variables or hardcoded fallbacks provided by user
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "7611590740:AAEx9u-P07Y3o4mG5_E_nK4T-q8Pz5mE8Yk";
-    const CHAT_ID = process.env.TELEGRAM_CHAT_ID || "1452664718";
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8914963503:AAEnBeYX8qbRCKG6SUVkC2BUK9OqTvq0p_I";
+    const CHAT_ID = process.env.TELEGRAM_CHAT_ID || "-1004319753390";
 
     if (!BOT_TOKEN || !CHAT_ID) {
       return res.status(500).json({ error: "Telegram configuration (TOKEN or CHAT_ID) is missing on server" });
@@ -565,6 +569,14 @@ After every interaction end with:
       const data = await telegramResponse.json();
       
       if (!telegramResponse.ok) {
+        // Fallback retry using formatted GET query parameter URL structure
+        const plainText = message ? message.replace(/<[^>]*>?/gm, '') : '';
+        const fallbackUrl = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(plainText)}`;
+        const fallbackRes = await fetch(fallbackUrl);
+        const fallbackData = await fallbackRes.json();
+        if (fallbackRes.ok) {
+          return res.json({ success: true, data: fallbackData });
+        }
         return res.status(telegramResponse.status).json(data);
       }
 

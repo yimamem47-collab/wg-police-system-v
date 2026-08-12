@@ -198,6 +198,28 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "data", "officerId", "timestamp"]
+    },
+    "ShiftLog": {
+      "title": "ShiftLog",
+      "description": "A police officer active duty shift log",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "officerId": { "type": "string" },
+        "officerName": { "type": "string" },
+        "badgeNumber": { "type": "string" },
+        "station": { "type": "string" },
+        "dutyType": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "durationSeconds": { "type": "number" },
+        "status": { "type": "string", "enum": ["Active", "Completed", "Paused"] },
+        "location": { "type": "string" },
+        "notes": { "type": "string" },
+        "incidentsHandledCount": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "officerId", "officerName", "startTime", "status"]
     }
   },
   "firestore": {
@@ -210,6 +232,7 @@
     "/chat_messages": { "schema": "ChatMessage", "description": "AI Assistant chat history" },
     "/police_scans": { "schema": "PoliceScan", "description": "Collection of police scans" },
     "/community_reports": { "schema": "CommunityReport", "description": "Citizen reported tips and crimes" },
-    "/corruption_reports": { "schema": "CorruptionReport", "description": "Corruption tips reported by citizens" }
+    "/corruption_reports": { "schema": "CorruptionReport", "description": "Corruption tips reported by citizens" },
+    "/police_shifts": { "schema": "ShiftLog", "description": "Collection of officer duty shift logs" }
   }
 }

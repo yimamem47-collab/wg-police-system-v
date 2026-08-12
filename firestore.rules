@@ -243,5 +243,11 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAuthenticated() && (isOfficer() || isAdmin());
     }
+
+    match /police_shifts/{shiftId} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin();
+    }
   }
 }
