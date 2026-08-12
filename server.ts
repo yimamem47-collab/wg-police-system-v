@@ -10,10 +10,8 @@ import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/fire
 
 dotenv.config();
 
-const __filename = typeof import.meta !== "undefined" && import.meta.url
-  ? fileURLToPath(import.meta.url)
-  : "";
-const __dirname = __filename ? path.dirname(__filename) : "";
+const _filename = typeof __filename !== "undefined" ? __filename : "";
+const _dirname = _filename ? path.dirname(_filename) : process.cwd();
 
 const PORT = 3000;
 const REPO_OWNER = "yimamem47-collab";
