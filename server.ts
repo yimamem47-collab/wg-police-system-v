@@ -368,7 +368,7 @@ After every interaction end with:
 "ለዚህ አገልግሎት ስለተጠቀሙ እናመሰግናለን። ሌላ ጥያቄ ካለዎ ሁሌም እዚህ ነኝ። የምዕራብ ጎጃም ዞን ፖሊስ ሁሌም ለዜጎች ደህንነት ቆሟል! 🇪🇹"`;
 
       const responseStream = await aiClient.models.generateContentStream({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.6-flash",
         contents: formattedHistory as any,
         config: {
           systemInstruction,
@@ -432,7 +432,7 @@ After every interaction end with:
       }
 
       const response = await aiClient.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-3.6-flash",
         contents: [{
           role: 'user',
           parts: [
