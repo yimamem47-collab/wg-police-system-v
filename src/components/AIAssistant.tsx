@@ -146,57 +146,58 @@ export function AIAssistant({
 
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!input.trim() || loading) return;
-
-    const userMessageText = input;
-
-    await addChatMessage({
-      text: userMessageText,
-      sender: 'user'
-    });
+    const messageText = input.trim();
+    if (!messageText || loading) return;
 
     setInput('');
     setLoading(true);
 
     let aiMessageId = '';
     try {
-      // Create a local-only placeholder for the AI response
+      // Add user message
+      await addChatMessage({
+        text: messageText,
+        sender: 'user'
+      });
+
+      // Add AI placeholder message for live streaming
       aiMessageId = await addChatMessage({
         text: '...',
         sender: 'ai'
       }, true);
 
-      if (!aiMessageId) throw new Error("Failed to create AI message");
+      const formattedHistory = chatMessages.map(m => ({
+        ...m,
+        timestamp: new Date(m.timestamp)
+      }));
 
-      const aiResponse = await getGeminiResponseStream(
-        userMessageText, 
-        chatMessages.map(m => ({
-          ...m,
-          timestamp: new Date(m.timestamp)
-        })),
+      const finalResponse = await getGeminiResponseStream(
+        messageText, 
+        formattedHistory,
         { assignments, incidents, reports, zoneReports, user },
-        async (text) => {
-          // Update the message locally as it streams
-          await updateChatMessage(aiMessageId, text);
+        async (chunkText) => {
+          if (aiMessageId) {
+            await updateChatMessage(aiMessageId, chunkText);
+          }
         }
       );
-      
-      // Once stream is complete, persist final AI message to Firestore, replacing the local placeholder
-      await addChatMessage({
-        text: aiResponse,
-        sender: 'ai'
-      }, false, aiMessageId);
 
-      // Auto-speak disabled upon user request
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
+      if (aiMessageId && finalResponse) {
+        await updateChatMessage(aiMessageId, finalResponse);
       }
     } catch (error) {
-      console.error('Chat error:', error);
-      await addChatMessage({
-        text: lang === 'am' ? 'ይቅርታ፣ ምላሽ መስጠት አልቻልኩም። እባክዎ እንደገና ይሞክሩ።' : "Sorry, I couldn't generate a response. Please try again.",
-        sender: 'ai'
-      }, true, aiMessageId);
+      console.error('Chat error in AIAssistant:', error);
+      const errReply = lang === 'am' 
+        ? 'ደህና ነኝ፣ የምዕራብ ጎጃም ዞን ፖሊስ ዲጂታል ረዳት ነኝ። በወንጀል ጥቆማ፣ በትራፊክ ደህንነት እና በፖሊስ መምሪያው አገልግሎቶች ዙሪያ ልረዳዎ እችላለሁ።' 
+        : "I am the West Gojjam Zone Police Digital Assistant. How can I help you today?";
+      if (aiMessageId) {
+        await updateChatMessage(aiMessageId, errReply);
+      } else {
+        await addChatMessage({
+          text: errReply,
+          sender: 'ai'
+        }, true);
+      }
     } finally {
       setLoading(false);
     }

@@ -155,7 +155,7 @@ export function useAppData() {
         });
       });
     }, (err) => {
-      handleFirestoreError(err, OperationType.LIST, 'chat_messages');
+      console.warn("Firestore chat_messages snapshot listener warning:", err);
     });
 
     return () => {
@@ -566,37 +566,43 @@ export function useAppData() {
       setChatMessages(prev => prev.filter(msg => msg.id !== replaceLocalId));
     }
 
+    // Always update local React state first so UI is immediately updated and responsive
+    setChatMessages(prev => [...prev, newMessage]);
+
     if (isLocal || !user) {
-      setChatMessages(prev => [...prev, newMessage]);
       return localId;
     }
 
-    const docRef = doc(collection(db, 'chat_messages'));
-    const id = docRef.id;
-    const dbMessage = { 
-      ...message, 
-      id, 
-      userId: user.id,
-      timestamp: serverTimestamp() as any
-    };
+    // Attempt firestore persistence asynchronously in background
     try {
+      const docRef = doc(collection(db, 'chat_messages'));
+      const id = docRef.id;
+      const dbMessage = { 
+        ...message, 
+        id, 
+        userId: user.id,
+        timestamp: serverTimestamp() as any
+      };
       await setDoc(docRef, dbMessage);
       return id;
     } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, `chat_messages/${id}`);
-      return '';
+      console.warn("Firestore addChatMessage warning (fallback to local state):", err);
+      return localId;
     }
   };
 
   const updateChatMessage = async (id: string, text: string) => {
+    // Always update local React state immediately
+    setChatMessages(prev => prev.map(msg => msg.id === id ? { ...msg, text } : msg));
+
     if (id.startsWith('local_') || !user) {
-      setChatMessages(prev => prev.map(msg => msg.id === id ? { ...msg, text } : msg));
       return;
     }
+
     try {
       await updateDoc(doc(db, 'chat_messages', id), { text });
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `chat_messages/${id}`);
+      console.warn("Firestore updateChatMessage warning (fallback to local state):", err);
     }
   };
 

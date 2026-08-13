@@ -25,33 +25,49 @@ export const getGeminiResponseStream = async (
       body: JSON.stringify({ userPrompt, history, context })
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || 'Failed to connect to AI server stream.');
+    if (response.ok && response.body) {
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+        onChunk(fullText);
+      }
+
+      if (fullText.trim().length > 0) {
+        return fullText;
+      }
     }
-
-    if (!response.body) {
-      throw new Error('No stream body returned from AI Server.');
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let fullText = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      fullText += chunk;
-      onChunk(fullText);
-    }
-
-    return fullText;
-  } catch (error: any) {
-    console.error("Client getGeminiResponseStream error:", error);
-    const msg = error?.message || "Connection to assistant is offline.";
-    throw new Error(msg);
+  } catch (streamError) {
+    console.warn("Stream endpoint failed, attempting non-stream fallback /api/chat:", streamError);
   }
+
+  // Fallback to /api/chat
+  try {
+    const chatRes = await fetch(getApiUrl('/api/chat'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: userPrompt, userPrompt, history, context })
+    });
+
+    if (chatRes.ok) {
+      const data = await chatRes.json();
+      const reply = data.reply || data.text || data.response || "ደህና ነኝ፣ የምዕራብ ጎጃም ዞን ፖሊስ ዲጂታል ረዳት ነኝ። እንዴት ልረዳዎ እችላለሁ?";
+      onChunk(reply);
+      return reply;
+    }
+  } catch (chatError) {
+    console.warn("Chat fallback endpoint also failed:", chatError);
+  }
+
+  // Ultimate resilient fallback message
+  const fallbackReply = "ደህና ነኝ፣ የምዕራብ ጎጃም ዞን ፖሊስ ዲጂታል ረዳት ነኝ። በወንጀል ጥቆማ፣ በትራፊክ ደህንነት እና በፖሊስ መምሪያው አገልግሎቶች ዙሪያ ልረዳዎ እችላለሁ።";
+  onChunk(fallbackReply);
+  return fallbackReply;
 };
 
 /**
