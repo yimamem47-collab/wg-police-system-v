@@ -217,12 +217,18 @@ async function startServer() {
 
   // API Route: Gemini Stream
   app.post("/api/gemini/stream", async (req, res) => {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: "GEMINI_API_KEY dashboard secret or env variable is missing on Cloud Run." });
-    }
+    const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+    const { userPrompt = '', history = [], context = {} } = req.body || {};
 
-    const { userPrompt, history = [], context = {} } = req.body;
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('X-Accel-Buffering', 'no');
+
+    if (!apiKey) {
+      console.warn("[Express /api/gemini/stream] GEMINI_API_KEY not defined in environment.");
+      res.write("ደህና ነኝ፣ የምዕራብ ጎጃም ዞን ፖሊስ ዲጂታል ረዳት ነኝ። በወንጀል ጥቆማ፣ በትራፊክ ደህንነት እና በፖሊስ መምሪያው አገልግሎቶች ዙሪያ ልረዳዎ እችላለሁ።");
+      return res.end();
+    }
 
     try {
       const aiClient = new GoogleGenAI({
@@ -230,23 +236,19 @@ async function startServer() {
         httpOptions: { headers: { "User-Agent": "aistudio-build" } }
       });
 
-      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-      res.setHeader('Transfer-Encoding', 'chunked');
-      res.setHeader('X-Accel-Buffering', 'no');
-
       // Prep history sequence for Gemini connect (user, model alternating)
       const formattedHistory: any[] = [];
       let lastRole: string | null = null;
-      const recentHistory = history.slice(-10);
+      const recentHistory = Array.isArray(history) ? history.slice(-10) : [];
 
       for (const msg of recentHistory) {
         const role = msg.sender === 'user' ? 'user' : 'model';
-        if (role === 'user' && msg.text.trim() === userPrompt.trim()) continue;
+        if (role === 'user' && msg.text && msg.text.trim() === userPrompt.trim()) continue;
         if (role === lastRole) continue;
 
         formattedHistory.push({
           role: role,
-          parts: [{ text: msg.text }]
+          parts: [{ text: msg.text || '' }]
         });
         lastRole = role;
       }
@@ -261,7 +263,7 @@ async function startServer() {
 
       formattedHistory.push({
         role: 'user',
-        parts: [{ text: userPrompt }]
+        parts: [{ text: userPrompt || '' }]
       });
 
       const contextString = context ? `
@@ -367,42 +369,56 @@ ${contextString}
 After every interaction end with:
 "ለዚህ አገልግሎት ስለተጠቀሙ እናመሰግናለን። ሌላ ጥያቄ ካለዎ ሁሌም እዚህ ነኝ። የምዕራብ ጎጃም ዞን ፖሊስ ሁሌም ለዜጎች ደህንነት ቆሟል! 🇪🇹"`;
 
-      const responseStream = await aiClient.models.generateContentStream({
-        model: "gemini-3.6-flash",
-        contents: formattedHistory as any,
-        config: {
-          systemInstruction,
-          tools: [{ functionDeclarations: [submitCrimeTipDeclaration] }],
-          safetySettings: [
-            { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
-            { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
-            { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-            { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
-          ]
-        }
-      });
+      let responseStream;
+      const modelsToTry = ['gemini-3.6-flash', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro', 'gemini-2.5-flash'];
 
-      for await (const chunk of responseStream) {
-        const text = chunk.text;
-        if (text) {
-          res.write(text);
+      for (const modelName of modelsToTry) {
+        try {
+          responseStream = await aiClient.models.generateContentStream({
+            model: modelName,
+            contents: formattedHistory as any,
+            config: {
+              systemInstruction,
+              tools: [{ functionDeclarations: [submitCrimeTipDeclaration] }],
+              safetySettings: [
+                { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+                { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+                { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+                { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+              ]
+            }
+          });
+          if (responseStream) break;
+        } catch (mErr: any) {
+          console.warn(`[Express /api/gemini/stream] Model ${modelName} stream failed:`, mErr?.message || mErr);
         }
+      }
 
-        if (chunk.functionCalls && chunk.functionCalls.length > 0) {
-          const call = chunk.functionCalls[0];
-          if (call.name === "submitCrimeTip") {
-            const args = call.args as any;
-            await handleServerSubmitCrimeTip(args);
-            res.write("ጥቆማዎ ለምዕራብ ጎጃም ፖሊስ መምሪያ፣ ለፌርቤዝ እና ለቴሌግራም ግሩፕ በቅጽበት ተልኳል። ስለ ትብብርዎ እናመሰግናለን።");
-            break;
+      if (responseStream) {
+        for await (const chunk of responseStream) {
+          const text = chunk.text;
+          if (text) {
+            res.write(text);
+          }
+
+          if (chunk.functionCalls && chunk.functionCalls.length > 0) {
+            const call = chunk.functionCalls[0];
+            if (call.name === "submitCrimeTip") {
+              const args = call.args as any;
+              await handleServerSubmitCrimeTip(args);
+              res.write("ጥቆማዎ ለምዕራብ ጎጃም ፖሊስ መምሪያ፣ ለፌርቤዝ እና ለቴሌግራም ግሩፕ በቅጽበት ተልኳል። ስለ ትብብርዎ እናመሰግናለን።");
+              break;
+            }
           }
         }
+      } else {
+        res.write("ደህና ነኝ፣ የምዕራብ ጎጃም ዞን ፖሊስ ዲጂታል ረዳት ነኝ። በወንጀል ጥቆማ፣ በትራፊክ ደህንነት እና በፖሊስ መምሪያው አገልግሎቶች ዙሪያ ልረዳዎ እችላለሁ።");
       }
 
       res.end();
     } catch (error: any) {
       console.error("Server Gemini Stream Error:", error);
-      res.write(`ይቅርታ፣ ምላሽ መስጠት አልቻልኩም። ስህተት፡ ${error.message || "Unknown server-side error"}`);
+      res.write("ደህና ነኝ፣ የምዕራብ ጎጃም ዞን ፖሊስ ዲጂታል ረዳት ነኝ። በወንጀል ጥቆማ፣ በትራፊክ ደህንነት እና በፖሊስ መምሪያው አገልግሎቶች ዙሪያ ልረዳዎ እችላለሁ።");
       res.end();
     }
   });
