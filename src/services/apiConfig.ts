@@ -6,9 +6,6 @@ import { Capacitor } from '@capacitor/core';
  * while keeping paths relative on normal web/preview mode.
  */
 
-// Default Cloud Run deployment host for the backend
-const DEFAULT_REMOTE_HOST = 'https://ais-pre-dv2qu5li6lwo7dput2a5di-281496265411.europe-west2.run.app';
-
 export function getApiUrl(path: string): string {
   // Try to read custom server URL from local storage
   const savedUrl = typeof localStorage !== 'undefined' ? localStorage.getItem('wg_police_api_server_url') : null;
@@ -18,12 +15,7 @@ export function getApiUrl(path: string): string {
     return `${cleanBase}${path}`;
   }
 
-  // If Capacitor is on a native platform (Android/iOS), point to remote host
-  if (Capacitor.isNativePlatform()) {
-    return `${DEFAULT_REMOTE_HOST}${path}`;
-  }
-
-  // On all web environments (including Vercel, Netlify, and Cloud Run), use relative path
+  // On all environments, use the path directly.
   return path;
 }
 
@@ -42,5 +34,6 @@ export function setApiServerUrl(url: string | null) {
  * Gets currently configured API Server URL
  */
 export function getApiServerUrl(): string {
-  return localStorage.getItem('wg_police_api_server_url') || DEFAULT_REMOTE_HOST;
+  return localStorage.getItem('wg_police_api_server_url') || '';
 }
+

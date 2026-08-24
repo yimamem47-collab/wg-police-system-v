@@ -1,10 +1,23 @@
+import { Capacitor } from '@capacitor/core';
 import { getApiUrl } from './apiConfig';
 
+const DIRECT_BOT_TOKEN = "8914963503:AAEnBeYX8qbRCKG6SUVkC2BUK9OqTvq0p_I";
+const DIRECT_CHAT_ID = "-1004319753390";
+
 /**
- * Sends a message via the server-side proxy to bypass browser restrictions
- * and keep the bot token secure.
+ * Sends a message to Telegram with robust fallbacks:
+ * 1. Tries backend proxy (/api/telegram)
+ * 2. If proxy fails, returns HTML auth challenge, or running on native mobile, sends directly via Telegram Bot API
  */
-export async function sendTelegramMessage(message: string, retries = 2) {
+export async function sendTelegramMessage(message: string, retries = 2): Promise<boolean> {
+  // Method 1: Try direct Telegram Bot API first on native mobile (Capacitor)
+  // because Cloud Run preview proxies require browser cookies that Android APK doesn't have.
+  if (Capacitor.isNativePlatform()) {
+    const directSuccess = await sendDirectToTelegram(message);
+    if (directSuccess) return true;
+  }
+
+  // Method 2: Try Backend Proxy on Web
   const url = getApiUrl('/api/telegram');
   
   for (let i = 0; i <= retries; i++) {
@@ -18,12 +31,25 @@ export async function sendTelegramMessage(message: string, retries = 2) {
         })
       });
 
+      const contentType = response.headers.get('content-type') || '';
+      
+      // If response is HTML (e.g. Google Cloud Run auth cookie verification page), fallback to direct API
+      if (contentType.includes('text/html')) {
+        console.warn("Proxy returned HTML auth page, falling back to direct Telegram API.");
+        return await sendDirectToTelegram(message);
+      }
+
       if (response.ok) {
         console.log('Telegram message sent via proxy successfully');
         return true;
       }
       
-      const errorData = await response.json();
+      let errorData: any = {};
+      try {
+        errorData = await response.json();
+      } catch {
+        // Not JSON
+      }
       console.error(`Telegram Proxy error (Attempt ${i + 1}):`, errorData);
       
       // If server returns a parse error, try plain text
@@ -40,13 +66,63 @@ export async function sendTelegramMessage(message: string, retries = 2) {
       }
     } catch (error: any) {
       console.error(`Telegram Proxy fetch error (Attempt ${i + 1}):`, error.message || error);
+      // If fetch fails (CORS, network error, offline), try direct Telegram Bot API
+      const directSuccess = await sendDirectToTelegram(message);
+      if (directSuccess) return true;
+
       if (i < retries) {
         await new Promise(resolve => setTimeout(resolve, 1500));
       }
     }
   }
   
-  return false;
+  // Final fallback to direct Telegram API
+  return await sendDirectToTelegram(message);
+}
+
+/**
+ * Direct Telegram Bot API Dispatcher (bypasses all backend proxies, works on native Android)
+ */
+async function sendDirectToTelegram(message: string): Promise<boolean> {
+  if (!DIRECT_BOT_TOKEN || !DIRECT_CHAT_ID) {
+    console.warn("Direct Telegram credentials not found.");
+    return false;
+  }
+
+  const directUrl = `https://api.telegram.org/bot${DIRECT_BOT_TOKEN}/sendMessage`;
+  
+  try {
+    const response = await fetch(directUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: DIRECT_CHAT_ID,
+        text: message,
+        parse_mode: 'HTML'
+      })
+    });
+
+    if (response.ok) {
+      console.log('Telegram message sent directly to Bot API successfully');
+      return true;
+    }
+
+    // If HTML parsing failed on Telegram side, send plain text
+    const plainText = message.replace(/<[^>]*>?/gm, '');
+    const plainResponse = await fetch(directUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: DIRECT_CHAT_ID,
+        text: plainText
+      })
+    });
+
+    return plainResponse.ok;
+  } catch (directErr) {
+    console.error("Direct Telegram dispatch error:", directErr);
+    return false;
+  }
 }
 
 export function escapeHtml(text: string | undefined | null): string {
