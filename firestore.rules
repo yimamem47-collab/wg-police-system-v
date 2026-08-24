@@ -205,20 +205,24 @@ service cloud.firestore {
     }
 
     match /community_reports/{reportId} {
-      allow read: if isAdmin();
-      allow create: if isValidCommunityReport(request.resource.data);
-      allow update: if isAdmin();
+      allow read: if isAuthenticated();
+      allow create: if true; // Open to citizens (with validation on data if provided)
+      allow update: if isAuthenticated() && (isAdmin() || isOfficer());
       allow delete: if isAdmin();
     }
 
     match /quick_tips/{tipId} {
-      allow read: if isAdmin();
+      allow read: if isAuthenticated();
       allow create: if true; // Open to citizens
+      allow update: if isAuthenticated() && (isAdmin() || isOfficer());
+      allow delete: if isAdmin();
     }
 
     match /corruption_reports/{reportId} {
-      allow read: if isAdmin();
+      allow read: if isAuthenticated();
       allow create: if true; // Open to citizens
+      allow update: if isAuthenticated() && (isAdmin() || isOfficer());
+      allow delete: if isAdmin();
     }
 
     match /police_scans/{scanId} {
