@@ -1,0 +1,6 @@
+{
+	"appId": "com.westgojjam.police",
+	"appName": "West Gojjam Police",
+	"webDir": "dist",
+	"bundledWebRuntime": false
+}
