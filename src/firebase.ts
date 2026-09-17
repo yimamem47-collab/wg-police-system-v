@@ -1,12 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
-  setPersistence, 
-  browserLocalPersistence, 
-  browserSessionPersistence, 
-  inMemoryPersistence 
-} from "firebase/auth";
+import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
 import { 
   initializeFirestore, 
   persistentLocalCache, 
@@ -20,70 +13,22 @@ import {
   clearIndexedDbPersistence
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import { Capacitor } from "@capacitor/core";
 import firebaseAppletConfig from "../firebase-applet-config.json";
-
-// Handle global IndexedDB closing/hidden errors gracefully (e.g., when running in iframe/sandboxed preview)
-if (typeof window !== 'undefined') {
-  window.addEventListener('unhandledrejection', (event) => {
-    const reason = event.reason?.message || String(event.reason || '');
-    if (
-      reason.includes('Database is closing') ||
-      reason.includes('Database is hidden') ||
-      reason.includes('closing/hidden') ||
-      reason.includes('IndexedDB') ||
-      reason.includes('Auth persistence error')
-    ) {
-      console.warn("Handled IndexedDB / Auth persistence error gracefully:", reason);
-      event.preventDefault();
-    }
-  });
-
-  window.addEventListener('error', (event) => {
-    const msg = event.message || String(event.error || '');
-    if (
-      msg.includes('Database is closing') ||
-      msg.includes('Database is hidden') ||
-      msg.includes('closing/hidden')
-    ) {
-      console.warn("Handled database closing/hidden error gracefully:", msg);
-      event.preventDefault();
-    }
-  });
-}
-
-// Safe environment variable getter for both Node/Vercel (process.env) and Vite (import.meta.env)
-const getEnv = (key: string): string | undefined => {
-  const globalProc = typeof globalThis !== 'undefined' ? (globalThis as any).process : undefined;
-  if (globalProc && globalProc.env && globalProc.env[key]) {
-    return globalProc.env[key];
-  }
-  try {
-    // @ts-ignore
-    if (typeof import.meta !== "undefined" && import.meta.env) {
-      // @ts-ignore
-      return import.meta.env[key];
-    }
-  } catch {
-    // ignore
-  }
-  return undefined;
-};
 
 // Hybrid configuration: Prefer environment variables (for Vercel), fallback to applet config (for AI Studio)
 const firebaseConfig = {
-  apiKey: getEnv("VITE_FIREBASE_API_KEY") || firebaseAppletConfig.apiKey,
-  authDomain: getEnv("VITE_FIREBASE_AUTH_DOMAIN") || firebaseAppletConfig.authDomain,
-  projectId: getEnv("VITE_FIREBASE_PROJECT_ID") || firebaseAppletConfig.projectId,
-  storageBucket: getEnv("VITE_FIREBASE_STORAGE_BUCKET") || firebaseAppletConfig.storageBucket,
-  messagingSenderId: getEnv("VITE_FIREBASE_MESSAGING_SENDER_ID") || firebaseAppletConfig.messagingSenderId,
-  appId: getEnv("VITE_FIREBASE_APP_ID") || firebaseAppletConfig.appId,
-  measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID") || firebaseAppletConfig.measurementId,
-  firestoreDatabaseId: getEnv("VITE_FIREBASE_FIRESTORE_DATABASE_ID") || firebaseAppletConfig.firestoreDatabaseId
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseAppletConfig.apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseAppletConfig.authDomain,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseAppletConfig.projectId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseAppletConfig.storageBucket,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseAppletConfig.messagingSenderId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseAppletConfig.appId,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || firebaseAppletConfig.measurementId,
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseAppletConfig.firestoreDatabaseId
 };
 
 // Use the firestoreDatabaseId from the config, but ignore it if it looks like an API key (starts with AIza)
-const rawDbId = getEnv("VITE_FIREBASE_FIRESTORE_DATABASE_ID") || firebaseAppletConfig.firestoreDatabaseId;
+const rawDbId = import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseAppletConfig.firestoreDatabaseId;
 const dbId = rawDbId && rawDbId !== "(default)" && !rawDbId.startsWith("AIza") && !rawDbId.includes(",")
   ? rawDbId 
   : undefined;
@@ -107,28 +52,21 @@ export const storage = getStorage(app);
 // Collection names
 export const CRIME_REPORTS_COLLECTION = "WestGojjam_Reports";
 
-// Ensure auth persistence is set with graceful fallbacks for iframe / closing DB scenarios
-setPersistence(auth, browserLocalPersistence)
-  .catch(() => setPersistence(auth, browserSessionPersistence))
-  .catch(() => setPersistence(auth, inMemoryPersistence))
-  .catch((err) => {
-    console.warn("Auth persistence fallback active:", err?.message || err);
-  });
+// Ensure persistence is set to local
+setPersistence(auth, browserLocalPersistence).catch((err) => {
+  console.error("Auth persistence error:", err);
+});
 
 // Initialize Firestore with robust settings
-const isSandboxed = typeof window !== 'undefined' && (
-  window.location.hostname.includes('ais-dev') || 
-  window.location.hostname.includes('ais-pre') || 
-  window.location.hostname === 'localhost' ||
-  (window.self !== window.top)
-);
+const isSandboxed = window.location.hostname.includes('ais-dev') || 
+                   window.location.hostname.includes('ais-pre') || 
+                   window.location.hostname === 'localhost';
 
-// Initialize Firestore with robust settings. Use multi-tab persistent cache for standard browsers.
-// In sandboxed/iframe or native mobile, use persistentLocalCache({}) without multi-tab manager to avoid tab locks.
+// Initialize Firestore with robust settings. Use multi-tab persistent cache by default.
+// In sandboxed/iframe environments where third-party IndexedDB might be blocked by browser privacy settings,
+// our try-catch initialization block below will automatically catch any DOMException and fall back to memoryLocalCache().
 export const firestoreSettings: any = {
-  localCache: (Capacitor.isNativePlatform() || isSandboxed)
-    ? persistentLocalCache({})
-    : persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
   ignoreUndefinedProperties: true,
 };
 

@@ -3,7 +3,6 @@ import { Shield, Plus, Search, Trash2, Edit2, MapPin, CheckCircle, RefreshCw, Aw
 import { WantedPerson } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Language } from '../lib/translations';
-import { SafeImage } from './SafeImage';
 
 interface WantedListProps {
   wantedPersons: WantedPerson[];
@@ -245,11 +244,11 @@ export function WantedList({ wantedPersons, lang, onAdd, onUpdate, onDelete, rea
                 {/* Photo Header */}
                 <div className="relative aspect-[4/3] w-full bg-slate-900 overflow-hidden border-b border-brand-border">
                   {person.photo ? (
-                    <SafeImage 
+                    <img 
                       src={person.photo} 
                       alt={person.name} 
                       className={`w-full h-full object-cover ${person.status === 'Captured' ? 'grayscale opacity-65' : ''}`}
-                      lang={lang}
+                      referrerPolicy="no-referrer"
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-600">
