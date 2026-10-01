@@ -444,6 +444,9 @@ export default function App() {
           <Reports 
             reports={reports} 
             officers={officers} 
+            incidents={incidents}
+            assignments={assignments}
+            user={user}
             lang={lang}
             initialEditId={initialEditId}
             onAdd={addReport} 
