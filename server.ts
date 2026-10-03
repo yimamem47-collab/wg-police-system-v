@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type, HarmCategory, HarmBlockThreshold } from "@google/genai";
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 dotenv.config();
@@ -108,10 +108,17 @@ async function startServer() {
       .replace(/'/g, "&#039;");
   }
 
+  const ACTIVE_TELEGRAM_BOT_TOKEN = "8914963503:AAGwS3zxzhB2Qx1w8geSiegUxsM0G0B6iUY";
+  const ACTIVE_TELEGRAM_CHAT_ID = "-1004319753390";
+
   // Helper for sending Telegram messages
   async function sendServerTelegramMessage(message: string) {
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8914963503:AAEnBeYX8qbRCKG6SUVkC2BUK9OqTvq0p_I";
-    const CHAT_ID = process.env.TELEGRAM_CHAT_ID || "-1004319753390";
+    const BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN && !process.env.TELEGRAM_BOT_TOKEN.startsWith("840542") && !process.env.TELEGRAM_BOT_TOKEN.includes("AAEnBe"))
+      ? process.env.TELEGRAM_BOT_TOKEN 
+      : ACTIVE_TELEGRAM_BOT_TOKEN;
+    const CHAT_ID = (process.env.TELEGRAM_CHAT_ID && !process.env.TELEGRAM_CHAT_ID.includes("3878859973"))
+      ? process.env.TELEGRAM_CHAT_ID 
+      : ACTIVE_TELEGRAM_CHAT_ID;
     if (!BOT_TOKEN || !CHAT_ID) {
       console.warn("Server Telegram config missing.");
       return;
@@ -154,14 +161,15 @@ async function startServer() {
       try {
         const configPath = path.resolve(process.cwd(), "firebase-applet-config.json");
         const firebaseConfig = JSON.parse(await fs.readFile(configPath, "utf-8"));
-        const firebaseApp = initializeApp(firebaseConfig);
+        const existingApps = getApps();
+        const firebaseApp = existingApps.length > 0 ? existingApps[0] : initializeApp(firebaseConfig);
         const db = firebaseConfig.firestoreDatabaseId 
           ? getFirestore(firebaseApp, firebaseConfig.firestoreDatabaseId)
           : getFirestore(firebaseApp);
         await addDoc(collection(db, 'community_reports'), {
-          reporterName: args.name,
-          reporterPhone: args.phone,
-          location: args.location,
+          reporterName: args.name || "ስም-አልባ ዜጋ (Anonymous Citizen)",
+          reporterPhone: args.phone || "ያልተገለጸ (Not provided)",
+          location: args.location || "ምዕራብ ጎጃም ዞን (West Gojjam)",
           details: args.details,
           date: new Date().toISOString().split('T')[0],
           status: 'New',
@@ -560,8 +568,12 @@ After every interaction end with:
     const { message, html = true } = req.body;
     
     // Use environment variables or hardcoded fallbacks provided by user
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8914963503:AAEnBeYX8qbRCKG6SUVkC2BUK9OqTvq0p_I";
-    const CHAT_ID = process.env.TELEGRAM_CHAT_ID || "-1004319753390";
+    const BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN && !process.env.TELEGRAM_BOT_TOKEN.startsWith("840542") && !process.env.TELEGRAM_BOT_TOKEN.includes("AAEnBe"))
+      ? process.env.TELEGRAM_BOT_TOKEN 
+      : ACTIVE_TELEGRAM_BOT_TOKEN;
+    const CHAT_ID = (process.env.TELEGRAM_CHAT_ID && !process.env.TELEGRAM_CHAT_ID.includes("3878859973"))
+      ? process.env.TELEGRAM_CHAT_ID 
+      : ACTIVE_TELEGRAM_CHAT_ID;
 
     if (!BOT_TOKEN || !CHAT_ID) {
       return res.status(500).json({ error: "Telegram configuration (TOKEN or CHAT_ID) is missing on server" });

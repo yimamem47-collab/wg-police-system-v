@@ -107,9 +107,7 @@ service cloud.firestore {
     }
 
     function isValidCommunityReport(data) {
-      return hasRequiredFields(['reporterName', 'reporterPhone', 'location', 'date', 'details', 'status', 'timestamp']) &&
-             data.reporterName is string &&
-             data.status in ['New', 'Reviewed', 'Action Taken'] &&
+      return data.status in ['New', 'Reviewed', 'Action Taken'] &&
              isValidTimestamp(data.timestamp);
     }
 
@@ -152,6 +150,9 @@ service cloud.firestore {
       allow read: if true;
     }
     match /_connectivity_test_/{docId} {
+      allow read: if true;
+    }
+    match /test/{docId} {
       allow read: if true;
     }
 
@@ -205,19 +206,19 @@ service cloud.firestore {
     }
 
     match /community_reports/{reportId} {
-      allow read: if isAdmin();
+      allow read: if isAuthenticated() && (isAdmin() || isOfficer());
       allow create: if isValidCommunityReport(request.resource.data);
-      allow update: if isAdmin();
+      allow update: if isAuthenticated() && (isAdmin() || isOfficer());
       allow delete: if isAdmin();
     }
 
     match /quick_tips/{tipId} {
-      allow read: if isAdmin();
+      allow read: if isAuthenticated() && (isAdmin() || isOfficer());
       allow create: if true; // Open to citizens
     }
 
     match /corruption_reports/{reportId} {
-      allow read: if isAdmin();
+      allow read: if isAuthenticated() && (isAdmin() || isOfficer());
       allow create: if true; // Open to citizens
     }
 
